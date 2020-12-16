@@ -13,6 +13,8 @@ Alert and confirm modals.
 
 ## Usage
 ```javascript
+import Modal from '../../modules/modal/modal.js';
+
 const modal = new Modal();
 
 const alert = document.querySelector(".alert");
