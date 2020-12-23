@@ -1,4 +1,6 @@
 /**
+ * Modal accessible
+ *
  * @method alert Add content (text/html) to modal with ok button
  * @method confirm Add content (text/html) to modal with ok or cancel button
  */
@@ -7,24 +9,21 @@ function Modal(){
 	const root = document.documentElement || window;
 	const clicktouch = ('ontouchstart' in root) ? 'touchstart' : "click";
 	let modal;
+	let box;
 	let btn_close;
 	let scrollTop;
 	
 	const disableScroll = () => window.scrollTo(0, scrollTop);
 
 	const clickOut = e => {
-		const box = modal.querySelector('.box');
 		if(!box.contains(e.target) && !btn_close.contains(e.target)) close();
 	}
-	
+
 	const trap = {
+		btn: null,
 		index: 0,
 		els: [],
 		isShifted: false,
-		init(){
-			trap.els = [];
-			modal.querySelectorAll('button,a,input').forEach(el => trap.els.push(el));
-		},
 		keyup(e){
 			e.key === 'Escape' && close();
 			if(e.key === 'Shift') {
@@ -36,7 +35,7 @@ function Modal(){
 				trap.isShifted = true;
 			}
         	if(e.key === 'Tab') {
-           		if(e.preventDefault) e.preventDefault();
+           	if(e.preventDefault) e.preventDefault();
 				else e.returnValue = false;
 				trap.isShifted ? trap.index -- : trap.index ++;
 				if(trap.index < 0) trap.index = trap.els.length-1;
@@ -44,32 +43,30 @@ function Modal(){
 				trap.els[trap.index].focus();
 			}
 		},
-		add(){
+		start(){
+			trap.btn = document.activeElement;
+			trap.els = [];
+			modal.querySelectorAll('button,a,input').forEach(el => trap.els.push(el));
 			btn_close.focus();
 			document.addEventListener('keydown', trap.keydown, false);
 			document.addEventListener('keyup', trap.keyup, false);
 		},
-		remove(){
+		stop(){
+			if(trap.btn.type === 'button') trap.btn.focus();
 			document.removeEventListener('keydown', trap.keydown);
 			document.removeEventListener('keyup', trap.keyup);
 		}
 	}
 	
-	let activeEl;
-	
 	const close = e => {
-		window.removeEventListener(clicktouch, clickOut);
+		window.removeEventListener(clicktouch, clickOut, {capture:true});
+		window.removeEventListener('scroll', disableScroll);
 		modal.classList.add('hide');
 		modal.addEventListener('animationend', () => modal.remove(), {once:true});
-		window.removeEventListener('scroll', disableScroll);
-		trap.remove();
-		if(activeEl.type === 'button') activeEl.focus();
+		trap.stop();
 	}
 
 	const open = (msg, type) => {
-		activeEl = document.activeElement;
-		scrollTop = window.pageYOffset || window.scrollY;
-		window.addEventListener('scroll', disableScroll);
 		modal = document.createElement('div');
 		modal.className = 'modal';
 		modal.innerHTML = `<div class="box">
@@ -84,9 +81,11 @@ function Modal(){
 		document.body.appendChild(modal);
 		btn_close = modal.querySelector('.btn-close');
 		btn_close.onclick = () => close();
+		box = modal.querySelector('.box');
+		scrollTop = window.pageYOffset || window.scrollY;
+		window.addEventListener('scroll', disableScroll);
 		window.addEventListener(clicktouch, clickOut, {capture:true});
-		trap.init();
-		trap.add();
+		trap.start();
 	}
 
 	this.alert = msg => {
@@ -105,5 +104,6 @@ function Modal(){
 		};
 	}
 }
+
 
 export default Modal;
